@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mis emociones</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      margin:0; font-family:'Segoe UI',sans-serif;
+      background:linear-gradient(135deg,#f0f4f8,#e3f2fd);
+      color:#333;
+    }
+    header {
+      background:url("fondo-header.jpg") no-repeat center center/cover;
+      color:#fff; padding:40px 20px; text-align:center;
+      border-bottom:4px solid #333;
+      position: relative;
+    }
+    header h1 {margin:0; font-size:2.4rem;}
+
+    .header-img {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 250px;
+      height: auto;
+    }
+
+    nav {
+      background:#333; padding:14px 0;
+      display:flex; justify-content:center; gap:16px;
+    }
+    nav button {
+      background:#1976d2; color:white; border:none;
+      padding:10px 18px; border-radius:10px; cursor:pointer;
+      transition:0.3s;
+    }
+    nav button:hover {background:#0d47a1;}
+    .container {max-width:1100px; margin:30px auto; padding:0 18px;}
+    .section {
+      display:none; background:#fff; border-radius:14px; padding:26px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.08); margin-bottom:24px;
+      animation:fadeIn 0.6s;
+    }
+    .section.active {display:block;}
+    h2 {margin-top:0; color:#1a237e;}
+    @keyframes fadeIn {from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+    /* Agenda */
+    .emotion-row {display:flex; gap:12px; margin-bottom:12px;}
+    .emotion-row button {
+      flex:1; padding:12px; font-size:1rem; border:none; border-radius:8px;
+      cursor:pointer; transition:0.3s; display:flex; align-items:center; justify-content:center; gap:6px;
+    }
+    #btnIra {background:#e63946; color:white;}
+    #btnIra:hover {background:#c62828;}
+    #btnMiedo {background:#42a5f5; color:white;}
+    #btnMiedo:hover {background:#1565c0;}
+    textarea {
+      width:100%; min-height:100px; margin:12px 0;
+      border-radius:8px; border:1px solid #ccc; padding:10px;
+    }
+    .save {
+      background:#43a047; color:white; border:none;
+      padding:10px 20px; border-radius:8px; cursor:pointer;
+    }
+    .notes-list {margin-top:20px;}
+    .note {
+      background:#f9f9f9; padding:12px; margin-bottom:10px;
+      border-radius:10px; display:flex; justify-content:space-between;
+      align-items:center; box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    }
+    .note.ira {border-left:6px solid #e63946;}
+    .note.miedo {border-left:6px solid #42a5f5;}
+    .note span {font-weight:bold;}
+    .note .emoji img {width:24px; height:24px; margin-right:6px; vertical-align:middle;}
+
+    /* Progreso */
+    #progressChart {
+      background:#fff; border-radius:14px; padding:20px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    /* Juegos */
+    .game-container, .memory-container {
+      background:#fff; padding:20px; border-radius:10px;
+      margin:0 auto 30px auto; text-align:center;
+      box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    }
+    .scenario {font-size:1.2rem; margin-bottom:20px;}
+    .game-container button {
+      margin:10px; padding:12px 20px; border:none;
+      border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    }
+    .ira {background:#e63946; color:#fff;}
+    .miedo {background:#457b9d; color:#fff;}
+
+    /* Memoria */
+    .board {
+      display:grid; grid-template-columns:repeat(4,100px); gap:15px;
+      justify-content:center; margin:20px 0;
+    }
+    .card {
+      width:100px; height:100px; background:#1976d2; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:2rem; color:transparent; cursor:pointer;
+      transition:0.3s;
+    }
+    .card.flipped, .card.matched {
+      background:#fff; border:2px solid #1976d2;
+    }
+    .card img {
+      width:60px; height:60px; display:none;
+    }
+    .card.flipped img, .card.matched img {
+      display:block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌈 Mis emociones</h1>
+    <p>Aprendamos juntos a reconocer cómo nos sentimos</p>
+    <img src="volcan-enojado.png" alt="Volcán enojado" class="header-img">
+  </header>
+
+  <nav>
+    <button onclick="showSection('juegos')">🎮 Juegos</button>
+    <button onclick="showSection('agenda')">📓 Agenda</button>
+    <button onclick="showSection('progreso')">📊 Progreso</button>
+  </nav>
+
+  <div class="container">
+    <!-- Agenda -->
+    <section id="agenda" class="section active">
+      <h2>📖 Agenda de Emociones</h2>
+      <p>Cuéntame cómo te sentiste hoy:</p>
+      <div class="emotion-row">
+        <button id="btnIra">
+          <img src="ira-volcan.png" alt="Ira">
+          Ira
+        </button>
+        <button id="btnMiedo">
+          <img src="miedo-araña.png" alt="Miedo">
+          Miedo
+        </button>
+      </div>
+      <textarea id="agendaText" placeholder="Describe qué sucedió y cómo lo manejaste"></textarea>
+      <br>
+      <button id="saveBtn" class="save">Guardar</button>
+      <h3 style="margin-top:20px">📝 Notas anteriores</h3>
+      <div id="notesList" class="notes-list"></div>
+    </section>
+
+    <!-- Progreso -->
+    <section id="progreso" class="section">
+      <h2>📊 Progreso Mensual</h2>
+      <canvas id="progressChart"></canvas>
+    </section>
+
+    <!-- Juegos -->
+    <section id="juegos" class="section">
+      <div class="game-container">
+        <h2>Juego: ¿Ira o Miedo?</h2>
+        <p class="scenario" id="scenario">Cargando...</p>
+        <button class="ira" onclick="answer('ira')">
+          <img src="ira-volcan.png" alt="Ira">
+          Ira
+        </button>
+        <button class="miedo" onclick="answer('miedo')">
+          <img src="miedo-araña.png" alt="Miedo">
+          Miedo
+        </button>
+        <p id="result"></p>
+      </div>
+
+      <div class="memory-container">
+        <h2>Juego de Memoria</h2>
+        <div id="game-board" class="board"></div>
+        <p id="message"></p>
+        <button onclick="startGame()">🔄 Reiniciar</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function showSection(id){
+      document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      if(id==="progreso") renderChart();
+    }
+
+    // Agenda
+    let selectedEmotion="";
+    document.getElementById("btnIra").onclick=()=>selectedEmotion="Ira";
+    document.getElementById("btnMiedo").onclick=()=>selectedEmotion="Miedo";
+
+    document.getElementById("saveBtn").onclick=()=>{
+      const text=document.getElementById("agendaText").value;
+      if(!selectedEmotion||!text.trim()) return;
+      const date=new Date().toLocaleDateString();
+      const note={emotion:selectedEmotion,text,date};
+      let notes=JSON.parse(localStorage.getItem("notes")||"[]");
+      notes.push(note);
+      localStorage.setItem("notes",JSON.stringify(notes));
+      document.getElementById("agendaText").value="";
+      selectedEmotion="";
+      loadNotes();
+    };
+
+    // Mapear emociones a imágenes correctas
+    const emotionImages = {
+      Ira: "ira-volcan.png",
+      Miedo: "miedo-araña.png"
+    };
+
+    function loadNotes(){
+      const notes=JSON.parse(localStorage.getItem("notes")||"[]");
+      const list=document.getElementById("notesList");
+      list.innerHTML="";
+      notes.forEach(n=>{
+        const div=document.createElement("div");
+        div.className="note "+(n.emotion==="Ira"?"ira":"miedo");
+        div.innerHTML=`<div><span>${n.date}</span><br>${n.text}</div>
+                       <div class="emoji">
+                         <img src="${emotionImages[n.emotion]}" alt="${n.emotion}"> ${n.emotion}
+                       </div>`;
+        list.appendChild(div);
+      });
+    }
+    loadNotes();
+
+    // Progreso
+    let chart;
+    function renderChart(){
+      const notes=JSON.parse(localStorage.getItem("notes")||"[]");
+      let ira=0,miedo=0;
+      notes.forEach(n=>{
+        if(n.emotion==="Ira") ira++;
+        if(n.emotion==="Miedo") miedo++;
+      });
+      const ctx=document.getElementById("progressChart").getContext("2d");
+      if(chart) chart.destroy();
+      chart=new Chart(ctx,{
+        type:"bar",
+        data:{
+          labels:["Ira","Miedo"],
+          datasets:[{label:"Emociones registradas",data:[ira,miedo],
+          backgroundColor:["rgba(230,57,70,0.7)","rgba(66,165,245,0.7)"],
+          borderColor:["#e63946","#42a5f5"],borderWidth:2}]
+        },
+        options:{
+          plugins:{legend:{labels:{font:{size:14},color:"#333"}}},
+          scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}
+        }
+      });
+    }
+
+    // Juego 1 - Ira o Miedo
+    const scenarios=[
+      {text:"Alguien rompe tu cuaderno a propósito.",answer:"ira"},
+      {text:"Escuchas un ruido extraño en la oscuridad.",answer:"miedo"},
+      {text:"Un compañero se burla de ti frente a los demás.",answer:"ira"},
+      {text:"Te quedas solo en una casa grande y oyes pasos.",answer:"miedo"},
+      {text:"Un amigo empuja tu trabajo escolar al piso.",answer:"ira"},
+      {text:"Ves una araña muy cerca de ti.",answer:"miedo"},
+      {text:"Pierdes un juego y alguien se ríe de ti.",answer:"ira"},
+      {text:"Se apagan todas las luces de repente.",answer:"miedo"}
+    ];
+    let index=0;
+
+    function loadScenario(){
+      if(index<scenarios.length){
+        document.getElementById("scenario").textContent=scenarios[index].text;
+        document.getElementById("result").textContent="";
+      }else{
+        document.getElementById("scenario").textContent="🎉 ¡Juego terminado!";
+        document.getElementById("result").textContent="";
+      }
+    }
+
+    function answer(choice){
+      if(index<scenarios.length){
+        if(choice===scenarios[index].answer){
+          document.getElementById("result").textContent="✅ ¡Correcto!";
+          document.getElementById("result").style.color="green";
+          setTimeout(()=>{
+            index++;
+            loadScenario();
+          },800);
+        }else{
+          document.getElementById("result").textContent="❌ Incorrecto";
+          document.getElementById("result").style.color="red";
+        }
+      }
+    }
+
+    loadScenario();
+
+    // Juego Memoria con imágenes
+    const emotions=[
+      {img:"ira-volcan.png",name:"Ira"},
+      {img:"miedo-araña.png",name:"Miedo"}
+    ];
+    let cards=[],flipped=[],lockBoard=false;
+    function startGame(){
+      const board=document.getElementById("game-board");
+      board.innerHTML="";
+      cards=[...emotions,...emotions,...emotions,...emotions].sort(()=>0.5-Math.random());
+      cards.forEach((c,i)=>{
+        const d=document.createElement("div");
+        d.classList.add("card");d.dataset.index=i;
+        d.innerHTML=`<img src="${c.img}" alt="${c.name}">`;
+        d.addEventListener("click",flipCard);board.appendChild(d);
+      });
+    }
+    function flipCard(){
+      if(lockBoard) return;
+      if(this.classList.contains("flipped")||this.classList.contains("matched"))return;
+      this.classList.add("flipped");flipped.push(this);
+      if(flipped.length===2){lockBoard=true;setTimeout(checkMatch,800);}
+    }
+    function checkMatch(){
+      const[f,s]=flipped;
+      if(cards[f.dataset.index].name===cards[s.dataset.index].name){
+        f.classList.add("matched");s.classList.add("matched");
+      }else{
+        f.classList.remove("flipped");s.classList.remove("flipped");
+      }
+      flipped=[];lockBoard=false;
+    }
+    startGame();
+  </script>
+</body>
+</html>
